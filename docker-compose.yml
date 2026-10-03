@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: wwchan
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: wwchan_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_URL=postgres://wwchan:secretpassword@db:5432/wwchan_db?sslmode=disable
+      - JWT_SECRET=supersecretjwtkey_please_change
+      - PORT=8080
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  adminer:
+    image: adminer
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  uploads_data:
